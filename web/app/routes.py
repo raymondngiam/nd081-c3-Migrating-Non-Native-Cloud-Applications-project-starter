@@ -6,6 +6,7 @@ from azure.servicebus import Message
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import logging
+import re
 
 @app.route('/')
 def index():
@@ -71,16 +72,22 @@ def notification():
             ## TODO: Refactor This logic into an Azure Function
             ## Code below will be replaced by a message queue
             #################################################
-            attendees = Attendee.query.all()
+            #attendees = Attendee.query.all()
 
-            for attendee in attendees:
-                subject = '{}: {}'.format(attendee.first_name, notification.subject)
-                send_email(attendee.email, subject, notification.message)
+            #for attendee in attendees:
+            #    subject = '{}: {}'.format(attendee.first_name, notification.subject)
+            #    send_email(attendee.email, subject, notification.message)
 
-            notification.completed_date = datetime.utcnow()
-            notification.status = 'Notified {} attendees'.format(len(attendees))
-            db.session.commit()
+            #notification.completed_date = datetime.utcnow()
+            #notification.status = 'Notified {} attendees'.format(len(attendees))
+            #db.session.commit()
+
             # TODO Call servicebus queue_client to enqueue notification ID
+            
+            m = re.search('.*\#([0-9]*)\,.*',str(notification))
+            if (m.groups()!=None):
+                notification_id = m.group(1)
+                queue_client.send(Message(str(notification_id)))
 
             #################################################
             ## END of TODO
